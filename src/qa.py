@@ -6,8 +6,10 @@
     命令行提问：  .venv/Scripts/python.exe src/qa.py "什么是多态？"
     交互模式：    .venv/Scripts/python.exe src/qa.py
 """
+import json
 import sys
 import time
+from pathlib import Path
 
 from openai import OpenAI
 
@@ -26,14 +28,43 @@ from config import (
 embed_client = OpenAI(api_key=SILICONFLOW_API_KEY, base_url=SILICONFLOW_BASE_URL)
 llm_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
+INDEX_JSON = Path(__file__).resolve().parent.parent / "data" / "index.json"
+_collection = None  # 模块级缓存：向量库只加载一次
+
+
+def get_collection():
+    """加载向量库：优先读离线索引文件（快，云端冷启动秒开）；
+    没有索引文件时回退到本地建库的持久化目录"""
+    global _collection
+    if _collection is not None:
+        return _collection
+
+    import chromadb
+
+    if INDEX_JSON.exists():
+        payload = json.loads(INDEX_JSON.read_text(encoding="utf-8"))
+        db = chromadb.Client()  # 纯内存，无需持久化
+        col = db.create_collection("ruankao_docs")
+        col.add(
+            ids=[f"{c['source']}#{i}" for i, c in enumerate(payload["chunks"])],
+            embeddings=payload["embeddings"],
+            documents=[c["text"] for c in payload["chunks"]],
+            metadatas=[
+                {"source": c["source"], "page_start": c["page_start"], "page_end": c["page_end"]}
+                for c in payload["chunks"]
+            ],
+        )
+        _collection = col
+    else:
+        db = chromadb.PersistentClient(path=str(CHROMA_DIR))
+        _collection = db.get_or_create_collection("ruankao_docs")
+    return _collection
+
 
 def retrieve(question: str, top_k: int = TOP_K) -> list[dict]:
     """把问题变成向量，从向量库检索最相关的 top_k 个片段"""
-    import chromadb
-
     qvec = embed_client.embeddings.create(model=EMBEDDING_MODEL, input=question).data[0].embedding
-    db = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    collection = db.get_or_create_collection("ruankao_docs")
+    collection = get_collection()
     result = collection.query(query_embeddings=[qvec], n_results=top_k)
     hits = []
     for doc, meta, dist in zip(result["documents"][0], result["metadatas"][0], result["distances"][0]):

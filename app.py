@@ -17,11 +17,14 @@ from config import CHROMA_DIR  # noqa: E402
 
 @st.cache_resource
 def ensure_index() -> str:
-    """向量库不存在时（如云端首次部署）自动建库，只执行一次"""
-    if not (CHROMA_DIR / "chroma.sqlite3").exists():
+    """启动时预加载知识库：有离线索引文件则秒载；否则（本地首次）现场建库"""
+    from qa import INDEX_JSON, get_collection
+
+    if not INDEX_JSON.exists() and not (CHROMA_DIR / "chroma.sqlite3").exists():
         from build_index import main as build_main
 
         build_main()
+    get_collection()  # 预加载，让首个问题也飞快
     return "就绪"
 
 
