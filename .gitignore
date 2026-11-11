@@ -8,7 +8,6 @@ __pycache__/
 # 密钥文件（绝对不可以提交到GitHub！）
 .env
 
-# 向量库和原始数据（体积大，不进git）
+# 向量库（云端每次冷启动自动重建，无需进git）
 chroma_db/
-data/raw/
 data/scanned_backup/
