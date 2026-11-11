@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+
+# 虚拟环境（太大，不进git）
+.venv/
+
+# 密钥文件（绝对不可以提交到GitHub！）
+.env
+
+# 向量库和原始数据（体积大，不进git）
+chroma_db/
+data/raw/
+data/scanned_backup/

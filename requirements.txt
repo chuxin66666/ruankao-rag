@@ -1,0 +1,5 @@
+pypdf
+chromadb
+openai
+streamlit
+python-dotenv
