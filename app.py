@@ -34,9 +34,12 @@ st.set_page_config(page_title="软考问答助手", page_icon="📚", layout="ce
 st.title("📚 软件设计师智能问答助手")
 st.caption("基于历年真题与章节习题库 · 回答附引用出处 · 资料没有的内容会如实告知")
 
-# 云端首次启动时自动建库（本地已有则秒过）
+# 云端首次启动时自动建库（本地已有则秒过）；失败时显示错误但页面仍可用
 with st.spinner("正在初始化知识库…"):
-    ensure_index()
+    try:
+        ensure_index()
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"知识库初始化失败：{type(exc).__name__}: {exc}")
 
 # 侧边栏：项目说明
 with st.sidebar:
