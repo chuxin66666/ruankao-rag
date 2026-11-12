@@ -11,3 +11,4 @@ __pycache__/
 # 向量库（云端每次冷启动自动重建，无需进git）
 chroma_db/
 data/scanned_backup/
+shot_*.png

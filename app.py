@@ -13,22 +13,21 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from config import CHROMA_DIR  # noqa: E402
+import qa  # noqa: E402
+
+ask = qa.ask  # 别名，供下方问答逻辑使用
 
 
 @st.cache_resource
 def ensure_index() -> str:
     """启动时预加载知识库：有离线索引文件则秒载；否则（本地首次）现场建库"""
-    from qa import INDEX_JSON, get_collection
-
-    if not INDEX_JSON.exists() and not (CHROMA_DIR / "chroma.sqlite3").exists():
+    if not qa.INDEX_JSON.exists() and not (CHROMA_DIR / "chroma.sqlite3").exists():
         from build_index import main as build_main
 
         build_main()
-    get_collection()  # 预加载，让首个问题也飞快
+    qa.get_collection()  # 预加载，让首个问题也飞快
     return "就绪"
 
-
-from qa import ask  # noqa: E402
 
 st.set_page_config(page_title="软考问答助手", page_icon="📚", layout="centered")
 
